@@ -126,7 +126,7 @@ namespace TinySTL {
 			destroy(&p->data);	//销毁 data 处的内容
 			put_node(p);		//释放内存
 		}
-		//����һ��������
+		//产生一个空链表
 		void empty_initialize() {
 			node = get_node();		//配置一个节点，令 node 指向它
 			node->next = node;
@@ -243,7 +243,7 @@ namespace TinySTL {
 
 
 
-/*insert �ڲ�����*/
+/*insert 辅助函数 */
 	template<class T,class Alloc>
 	void list <T, Alloc >::insert_aux(iterator position, size_type n, const T& val, std::true_type) {
 		for (auto i = n; i != 0; --i) {
@@ -258,7 +258,7 @@ namespace TinySTL {
 		}
 		insert(position, *last);
 	}
-/* �����ڲ����� */
+/* 构造辅助函数 */
 	template<class T, class Alloc>
 	void list<T, Alloc>::construct_aux(size_type n, const value_type& val, std::true_type) {
 		empty_initialize();//add a dummy node
@@ -280,7 +280,7 @@ namespace TinySTL {
 		list<T, Alloc>::insert(iterator pos, const T& x) {
 		node_pointer tmp = create_node(x);
 
-		//����ָ��, ��tmp����
+		//调整指针，将 tmp 插入
 		tmp->next = pos.node;
 		tmp->prev = pos.node->prev;
 		(pos.node->prev)->next = tmp;
@@ -290,12 +290,21 @@ namespace TinySTL {
 	}
 	template<class T, class Alloc>
 	void list<T,Alloc>::insert(iterator pos, size_type n, const value_type& x) {
-
+		node_pointer tmp = nullptr;
+		node_pointer front = pos.node, behind = pos.node->next;
+		for (int i = 0; i < n; ++i) {
+			tmp = create_node(x);
+			front->next = tmp;
+			tmp->prev = front;
+			front = tmp;
+		}
+		front->next = behind;
+		behind->prev = front;
 	}
 	template<class T, class Alloc>
 	template<class InputIterator>
 	void list<T, Alloc>::insert(iterator pos, InputIterator first, InputIterator last) {
-
+		insert_aux(position, first, last, typename std::is_integral<InputIterator>::type());
 	}
 
 	//移除迭代器pos所指结点，返回移除后该位置的迭代器
@@ -309,6 +318,16 @@ namespace TinySTL {
 		destroy_node(pos.node);
 		--size_;
 		return iterator(next_node);
+	}
+	template<class T, class Alloc>
+	typename list<T, Alloc>::iterator
+			list<T, Alloc>::erase(iterator first, iterator last) {
+		typename list<T, Alloc>::iterator res;
+		while (first != last) {
+			auto tmp = first++;
+			res = erase(tmp);
+		}
+		return res;
 	}
 
 	//清空整个链表
